@@ -1,3 +1,6 @@
 .venv
 .continue
 .pytest_cache
+src/core/__pycache__/service.cpython-311.pyc
+src/gui/__pycache__/main_window.cpython-311.pyc
+tests/__pycache__/test_service.cpython-311-pytest-9.0.2.pyc

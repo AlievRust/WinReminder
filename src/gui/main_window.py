@@ -5,9 +5,8 @@ from tkinter import ttk, messagebox
 from typing import Optional, List
 from datetime import datetime
 
-from core.database import DatabaseManager
+from core.service import ReminderService
 from core.reminder import Reminder, Status
-from services.notification import get_notification_service
 
 
 class MainWindow:
@@ -15,16 +14,19 @@ class MainWindow:
 
     POLL_INTERVAL = 30000  # 30 секунд в миллисекундах
 
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root: tk.Tk, reminder_service: ReminderService):
         """
         Инициализация главного окна.
 
         Args:
             root: Корневой объект Tkinter
+            reminder_service: Сервис управления напоминаниями
         """
         self.root = root
-        self.db: DatabaseManager = DatabaseManager()
-        self.notification_service = get_notification_service()
+        self.service = reminder_service
+        
+        # Устанавливаем callback для обновления GUI при изменениях из планировщика
+        self.service.set_refresh_callback(self.refresh_list)
         
         self.setup_ui()
         self.refresh_list()
@@ -93,16 +95,13 @@ class MainWindow:
         Returns:
             Список отфильтрованных напоминаний
         """
-        # Сначала обновляем просроченные
-        self.db.update_overdue_reminders()
-        
         filter_value = self.filter_var.get()
         
         if filter_value == "Все":
-            reminders = self.db.get_all_reminders()
+            reminders = self.service.get_all_reminders()
         else:
             status = Status.from_display_name(filter_value)
-            reminders = self.db.get_reminders_by_status(status)
+            reminders = self.service.get_reminders_by_status(status)
         
         return reminders
 
@@ -186,9 +185,8 @@ class MainWindow:
                 repeat_interval=dialog.result["repeat_interval"]
             )
             
-            # Сохранить в БД
-            self.db.add_reminder(reminder)
-            self.refresh_list()
+            # Сохранить через сервис
+            self.service.add_reminder(reminder)
 
     def on_done(self):
         """
@@ -201,8 +199,7 @@ class MainWindow:
             return
         
         if messagebox.askyesno("Подтверждение", "Отметить напоминание как выполненное?"):
-            self.db.update_status(reminder_id, Status.DONE)
-            self.refresh_list()
+            self.service.update_status(reminder_id, Status.DONE)
 
     def on_cancel(self):
         """
@@ -215,8 +212,7 @@ class MainWindow:
             return
         
         if messagebox.askyesno("Подтверждение", "Отменить выбранное напоминание?"):
-            self.db.update_status(reminder_id, Status.CANCELLED)
-            self.refresh_list()
+            self.service.update_status(reminder_id, Status.CANCELLED)
 
     def on_delete(self):
         """
@@ -229,8 +225,7 @@ class MainWindow:
             return
         
         if messagebox.askyesno("Подтверждение", "Удалить выбранное напоминание?"):
-            self.db.delete_reminder(reminder_id)
-            self.refresh_list()
+            self.service.delete_reminder(reminder_id)
 
     def on_test_notification(self):
         """
@@ -238,7 +233,7 @@ class MainWindow:
         Показывает тестовое уведомление.
         При успешной отправке не показывает всплывающее сообщение.
         """
-        success = self.notification_service.test_notification()
+        success = self.service.test_notification()
         if not success:
             messagebox.showerror("Ошибка", "Не удалось отправить уведомление")
 
