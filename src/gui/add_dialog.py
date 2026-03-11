@@ -100,6 +100,16 @@ class AddReminderDialog:
         time_frame = ttk.Frame(datetime_frame)
         time_frame.pack(fill=tk.X)
         
+        # Отображение выбранной даты
+        self.date_display_var = tk.StringVar(value="")
+        date_label = ttk.Label(
+            time_frame,
+            textvariable=self.date_display_var,
+            font=('Arial', 9, 'bold'),
+            foreground='#0066cc'
+        )
+        date_label.pack(side=tk.LEFT, padx=(0, 20))
+        
         ttk.Label(time_frame, text="Время:").pack(side=tk.LEFT)
         
         self.hours_var = tk.StringVar(value=datetime.now().strftime("%H"))
@@ -111,7 +121,8 @@ class AddReminderDialog:
             to=23,
             width=3,
             textvariable=self.hours_var,
-            format="%02.0f"
+            format="%02.0f",
+            command=self._on_time_changed
         )
         hours_spin.pack(side=tk.LEFT, padx=(10, 5))
         
@@ -123,7 +134,8 @@ class AddReminderDialog:
             to=59,
             width=3,
             textvariable=self.minutes_var,
-            format="%02.0f"
+            format="%02.0f",
+            command=self._on_time_changed
         )
         minutes_spin.pack(side=tk.LEFT, padx=5)
 
@@ -192,6 +204,7 @@ class AddReminderDialog:
         self.hours_var.set(now.strftime("%H"))
         self.minutes_var.set(now.strftime("%M"))
         self.reminder_data["due_date"] = now
+        self._update_date_display(now)
 
     def _on_date_selected(self, selected_date: datetime):
         """
@@ -211,6 +224,9 @@ class AddReminderDialog:
         except (ValueError, TypeError):
             # Если время некорректно, используем текущее
             self.reminder_data["due_date"] = selected_date
+        
+        # Обновляем отображение выбранной даты
+        self._update_date_display(selected_date)
 
     def add_time(self, minutes: int):
         """
@@ -233,6 +249,42 @@ class AddReminderDialog:
         self.hours_var.set(new_date.strftime("%H"))
         self.minutes_var.set(new_date.strftime("%M"))
         self.reminder_data["due_date"] = new_date
+        
+        # Обновляем отображение выбранной даты
+        self._update_date_display(new_date)
+
+    def _update_date_display(self, date: datetime):
+        """
+        Обновить отображение выбранной даты в Label.
+        
+        Args:
+            date: Дата для отображения
+        """
+        # Форматируем дату в формате DD.MM.YYYY (день.месяц.год)
+        date_str = date.strftime("%d.%m.%Y")
+        self.date_display_var.set(date_str)
+
+    def _on_time_changed(self):
+        """
+        Обработчик изменения времени в спинбоксах.
+        Обновляет дату в reminder_data с выбранным временем.
+        """
+        try:
+            hours = int(self.hours_var.get())
+            minutes = int(self.minutes_var.get())
+            
+            # Берём выбранную дату из календаря
+            selected_date = self.calendar.get_selected_date()
+            
+            # Комбинируем выбранную дату с новым временем
+            combined_date = selected_date.replace(hour=hours, minute=minutes)
+            self.reminder_data["due_date"] = combined_date
+            
+        except (ValueError, TypeError):
+            # Если время некорректно, оставляем предыдущее значение
+            pass
+
+
 
     def _validate_fields(self) -> bool:
         """

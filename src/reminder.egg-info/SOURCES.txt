@@ -6,6 +6,7 @@ src/core/__init__.py
 src/core/database.py
 src/core/reminder.py
 src/core/scheduler.py
+src/core/service.py
 src/gui/__init__.py
 src/gui/add_dialog.py
 src/gui/main_window.py
@@ -20,3 +21,4 @@ src/services/notification.py
 tests/test_database.py
 tests/test_reminder.py
 tests/test_scheduler.py
+tests/test_service.py
