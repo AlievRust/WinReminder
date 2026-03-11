@@ -1,5 +1,5 @@
 # Reminder Application (educational project)
-# vibe-coding, GLM-4.7, spec-driven development (OpenSpec),
+**vibe-coding, GLM-4.7, spec-driven development (OpenSpec)**
 
 Мини-приложение для управления напоминаниями на Windows 10/11 с автоматическими уведомлениями.
 
